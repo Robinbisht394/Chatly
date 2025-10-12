@@ -3,7 +3,7 @@ const cookie = require("cookie-parser");
 const dotenv = require("dotenv");
 const cors = require("cors");
 dotenv.config();
-const { Socket } = require("socket.io");
+const { Server } = require("socket.io");
 const http = require("http");
 const app = express();
 
@@ -16,11 +16,13 @@ const { dbConnection } = require("./Config/dbConnection");
 app.use(cors());
 app.use(express.json());
 app.use(cookie());
+
 const server = http.createServer(app);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1/message", messageRoutes);
-const io = new Socket(server, {
+
+const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
     origin: "http://localhost:3000",
@@ -29,11 +31,10 @@ const io = new Socket(server, {
 
 // establish a connection
 io.on("connection", (socket) => {
-  console.log("connected to soket.io");
+  console.log("connected to socket.io");
 
   socket.on("setup", (userData) => {
     socket.join(userData._id);
-
     socket.emit("connected");
   });
 
@@ -54,6 +55,7 @@ io.on("connection", (socket) => {
   socket.on("typing", (room) => {
     socket.in(room).emit("typing");
   });
+
   socket.on("stop typing", (room) => {
     socket.in(room).emit("stop typing");
   });
@@ -61,15 +63,13 @@ io.on("connection", (socket) => {
 
 const serverStart = async () => {
   try {
-    // connect database
     await dbConnection();
-    console.log("data connecteed success");
-    // listen to server
+    console.log("data connected success");
     server.listen(process.env.PORT || 4000, () => {
       console.log("server started");
     });
   } catch (error) {
-    console.log(err);
+    console.log(error);
   }
 };
 
