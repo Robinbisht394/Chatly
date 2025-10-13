@@ -26,7 +26,7 @@ const signup = async (req, res) => {
       });
     } else {
       const hashed = await bcrypt.hash(password, 10);
-      const newUser = new UserModel({
+      let newUser = new UserModel({
         name: name,
         email: email,
         password: hashed,
@@ -38,12 +38,11 @@ const signup = async (req, res) => {
       const token = jwt.sign({ user: newUser }, process.env.JWT_SECRET, {
         expiresIn: "30d",
       });
-      // res.cookie("token", token);
+      console.log("token", token);
 
-      newUser.token = token;
-      console.log(newUser);
-
+      newUser = newUser.toObject();
       delete newUser.password;
+      newUser.token = token;
 
       return res.status(201).json({
         success: true,
@@ -67,6 +66,7 @@ const signup = async (req, res) => {
 // login api for existing user
 const login = async (req, res) => {
   const { email, password } = req.body;
+  console.log(req.body);
 
   if (!email.trim() && !password.trim()) {
     // check for credentials to login
@@ -81,7 +81,7 @@ const login = async (req, res) => {
 
   try {
     // check if such user exist
-    const user = await UserModel.findOne({ email });
+    let user = await UserModel.findOne({ email });
 
     if (!user) {
       return res.status(404).json({
@@ -107,11 +107,15 @@ const login = async (req, res) => {
       expiresIn: "7d",
     });
 
+    user = user.toObject();
+    delete user.password;
+    user.token = token;
+
     return res.status(201).json({
       success: true,
       status: "Success",
       message: "Logged in successfully",
-      user: { user, token },
+      user: user,
     });
   } catch (err) {
     console.log({ type: "LOGIN_API", error: err.message });
@@ -139,14 +143,12 @@ const getAllUsers = async (req, res) => {
   console.log("Search", keyword);
 
   const user = await UserModel.find(keyword);
-  res
-    .status(200)
-    .json({
-      success: true,
-      status: "success",
-      data: user,
-      message: "Users fetched successfully",
-    });
+  res.status(200).json({
+    success: true,
+    status: "success",
+    data: user,
+    message: "Users fetched successfully",
+  });
 };
 
 module.exports = { signup, login, getAllUsers };

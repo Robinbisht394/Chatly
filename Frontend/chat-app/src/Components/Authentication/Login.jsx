@@ -26,30 +26,42 @@ const Login = () => {
     reset,
   } = useForm();
 
-  const { error, data, fetchApi } = useFetchApi();
+  const { error, data, fetchApi, setError } = useFetchApi();
   const [show, setShow] = useState(false);
 
   const onSubmit = async (formData) => {
-    await fetchApi("http://localhost:4000/api/user/login", formData);
+    const response = await fetchApi(
+      "http://localhost:4000/api/v1/user/login",
+      formData
+    );
+    console.log({ response: data, error: error });
 
-    if (error?.response?.data?.code === "USER_NOT_FOUND") {
+    if (error?.data?.code === "USER_NOT_FOUND") {
+      console.log(error.response);
+
       toast({
-        title: "Error",
-        description: error.response.data.message,
+        title: "login failed",
+        description: error?.data.message,
         status: "error",
         duration: 3000,
         isClosable: true,
       });
-    } else if (error?.response?.data?.code === "INVALID_ID_PASSWORD") {
+      setError(null);
+    } else if (error?.data?.code === "INVALID ID_PASSWORD") {
+      console.log(error.response);
+
       toast({
         title: "Error",
-        description: error.response.data.message,
+        description: error?.data.message,
         status: "error",
         duration: 3000,
         isClosable: true,
       });
+      setError(null);
     } else if (data) {
-      localStorage.setItem("user", JSON.stringify(data.user));
+      console.log(data);
+
+      localStorage.setItem("chatlyUser", JSON.stringify(data.user));
       toast({
         title: "Login successful",
         description: data.message,

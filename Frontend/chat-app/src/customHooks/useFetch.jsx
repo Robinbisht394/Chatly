@@ -17,14 +17,13 @@ const useFetchApi = () => {
       }
       setData(response.data);
     } catch (err) {
-      console.log(err);
       setError(err.response);
     } finally {
       setLoading(false);
     }
   };
 
-  return { loading, error, data, fetchApi };
+  return { loading, error, data, fetchApi, setError };
 };
 
 export default useFetchApi;

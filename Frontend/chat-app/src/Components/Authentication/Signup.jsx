@@ -67,7 +67,7 @@ const Signup = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:4000/api/user/signup",
+        "http://localhost:4000/api/v1/user/signup",
         payload
       );
 
@@ -79,14 +79,15 @@ const Signup = () => {
           duration: 3000,
           isClosable: true,
         });
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        localStorage.setItem("chatlyUser", JSON.stringify(response.data.user));
         reset();
       }
     } catch (err) {
-      console.error(err);
       toast({
         title: "Signup failed",
-        description: "An error occurred while signing up.",
+        description:
+          err?.response.data.error.message ||
+          "Something went wrong try again !",
         status: "error",
         duration: 3000,
         isClosable: true,
