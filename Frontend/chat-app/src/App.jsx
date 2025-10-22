@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import "./App.css";
-import ChatPage from "./pages/chatPage";
-import Home from "./pages/Home";
+import React from "react";
+import ChatPage from "./pages/chatPage.jsx";
+import Home from "./pages/Home.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import ChatProvider from "./context/chatProvider.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -16,17 +16,15 @@ const router = createBrowserRouter([
     path: "/chat",
     element: (
       <>
-        <ChatPage />
+        <ChatProvider>
+          <ChatPage />
+        </ChatProvider>
       </>
     ),
   },
 ]);
 function App() {
-  return (
-    <>
-      <RouterProvider router={router} />
-    </>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

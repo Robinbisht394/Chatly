@@ -13,15 +13,15 @@ import {
   Heading,
   Text,
 } from "@chakra-ui/react";
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("userInfo"));
+    const user = JSON.parse(localStorage.getItem("chatlyUser"));
     if (user) {
-      // navigate("/chats");
+      navigate("/chat");
     }
   }, []);
 

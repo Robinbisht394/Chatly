@@ -8,6 +8,6 @@ const {
 const router = express.Router();
 
 router.route("/").post(authMiddleware, sendMessage);
-router.route("/").get(authMiddleware, getAllMessage);
+router.route("/:chatId").get(authMiddleware, getAllMessage);
 
 module.exports = router;

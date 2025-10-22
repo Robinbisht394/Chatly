@@ -6,27 +6,28 @@ const chatContext = createContext();
 
 const ChatProvider = ({ children }) => {
   const [user, setUser] = useState();
-  const [selectedChat, setSeletedchat] = useState();
-  const [chatStateList, setChatStateList] = useState();
+  const [selectedChat, setSelectedchat] = useState();
+  const [chatStateList, setChatStateList] = useState([]);
   const [notification, setNotification] = useState([]);
-  // const navigate = useNavigate();
-  console.log(user);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
+    const user = localStorage.getItem("chatlyUser");
 
     if (!user) {
-      // navigate("/login");
+      navigate("/login");
+      return;
     }
-    setUser(user);
-  });
+    setUser(JSON.parse(user));
+  }, []);
+
   return (
     <chatContext.Provider
       value={{
         user,
         setUser,
         selectedChat,
-        setSeletedchat,
+        setSelectedchat,
         chatStateList,
         setChatStateList,
         notification,

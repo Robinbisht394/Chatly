@@ -15,6 +15,8 @@ const useFetchApi = () => {
       if (!response) {
         throw new Error("something went wrong");
       }
+      console.log(response);
+
       setData(response.data);
     } catch (err) {
       setError(err.response);

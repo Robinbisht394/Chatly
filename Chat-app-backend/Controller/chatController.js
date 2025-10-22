@@ -3,24 +3,25 @@ const userModel = require("../Model/UserModel");
 
 // create or access chat 1-1
 const accessChat = async (req, res) => {
-  const userId = req.body;
-  const isChat = await chatModel
+  const { userId } = req.body;
+  const { user } = req;
+
+  let isChat = await chatModel
     .find({
       isGroupChat: false,
-      $and: [
-        { users: { $elemMatch: { $eq: req.user._id } } },
-        { users: { $elemMatch: { $eq: req.userId } } },
-      ],
+      users: {
+        $all: [user._id, userId],
+        $size: 2,
+      },
     })
 
-    .populate("User", select("-password"))
+    .populate("users", "-password")
     .populate("latestMessage");
 
   isChat = await userModel.populate(isChat, {
     path: "latestMessage.sender",
     select: "name pic email",
   });
-  console.log("Access chat exist", isChat);
 
   let chatData;
   // if chat exist then send it otherwise create newone
@@ -32,18 +33,21 @@ const accessChat = async (req, res) => {
     chatData = {
       chatName: "sender",
       isGroupChat: false,
-      users: [req.user._id, userId],
+      users: [user._id, userId],
     };
   }
 
   try {
     const createdChat = await chatModel.create(chatData);
     const fullchat = await chatModel
-      .find({ _id: createdChat._id })
-      .populate("User", "-password");
-    return res.status(200).json({ chat: fullchat });
+      .findOne({ _id: createdChat._id })
+      .populate("users", "-password");
+
+    return res
+      .status(200)
+      .json({ success: true, status: "success", chat: fullchat });
   } catch (error) {
-    console.log({ api: "Access chat", error: err.message });
+    console.log({ api: "Access chat", error: error });
     return res.status(500).json({
       success: false,
       status: "failed",
@@ -52,31 +56,115 @@ const accessChat = async (req, res) => {
   }
 };
 
+// const accessChat = async (req, res) => {
+//   // 1. Destructure the target user ID from the request body.
+//   const { userId } = req.body;
+//   // Get the authenticated user object attached by the 'protect' middleware.
+//   const { user } = req;
+
+//   // Basic validation
+//   if (!userId) {
+//     return res.status(400).json({
+//       success: false,
+//       status: "failed",
+//       message: "Target user ID not sent with request.",
+//     });
+//   }
+
+//   try {
+//     // 2. ✅ FIX: Robust Query to find an existing 1-on-1 chat.
+//     // Use $all to check if both IDs are present, regardless of order, and $size: 2
+//     // to ensure it's not a group chat. This prevents the E11000 error.
+//     let isChat = await chatModel
+//       .find({
+//         isGroupChat: false,
+//         users: { $all: [user._id, userId], $size: 2 },
+//       })
+//       // ✅ FIX: Populate the correct field 'users' (assuming your schema uses 'users')
+//       .populate("users", "-password")
+//       .populate("latestMessage");
+
+//     // Populate the sender of the latest message
+//     isChat = await userModel.populate(isChat, {
+//       path: "latestMessage.sender",
+//       select: "name pic email",
+//     });
+
+//     // 3. Handle Chat Existence
+//     if (isChat.length > 0) {
+//       // Chat found, return the first document
+//       return res
+//         .status(200)
+//         .json({ success: true, status: "success", chat: isChat[0] });
+//     }
+
+//     // Chat not found, create a new one
+//     else {
+//       const chatData = {
+//         chatName: "sender", // Placeholder name
+//         isGroupChat: false,
+//         // ✅ FIX: Pass the clean IDs directly to the array
+//         users: [user._id, userId],
+//       };
+
+//       const createdChat = await chatModel.create(chatData);
+
+//       // ✅ FIX: Use findOne() instead of find() for a single document lookup
+//       const fullchat = await chatModel
+//         .findOne({ _id: createdChat._id })
+//         .populate("users", "-password");
+
+//       // ✅ FIX: Return the single object (fullchat), not an array
+//       return res
+//         .status(200)
+//         .json({ success: true, status: "success", chat: fullchat });
+//     }
+//   } catch (error) {
+//     console.error({
+//       api: "Access chat",
+//       error: error.message,
+//       stack: error.stack,
+//     });
+//     return res.status(500).json({
+//       success: false,
+//       status: "failed",
+//       message: "Failed to access chat. Check server logs for details.",
+//     });
+//   }
+// };
+
 //  fetch all chats for user
 const fetchAllchats = async (req, res) => {
   const userId = req.user._id;
+
   try {
-    const chats = chatModel.find({ user: { $elemMatch: { $eq: userId } } });
-    chats
+    const chats = await chatModel
+      .find({
+        users: { $elemMatch: { $eq: userId } },
+      })
       .populate("users", "-password")
       .populate("latestMessage")
       .populate("groupAdmin")
       .sort({ updatedAt: -1 });
+
     return res
       .status(200)
       .json({ success: true, status: "success", chats: chats });
   } catch (err) {
-    console.log({ api: "fetch chats", error: err.message });
+    console.log({ api: "fetch chats", error: err });
 
-    return res
-      .status(500)
-      .json({ success: false, status: "success", error: err.message });
+    return res.status(500).json({
+      success: false,
+      status: "success",
+      error: "Something went wrong try again !",
+    });
   }
 };
 
-// cretae a group chat
+// create a group chat
 const createGroupChat = async (req, res) => {
-  const userId = req.user._id;
+  const { user } = req;
+
   if (!req.body.users)
     return res.status(400).json({
       status: "Error",
@@ -92,17 +180,17 @@ const createGroupChat = async (req, res) => {
       message: "Users should be more than two",
     });
   }
-  users.push(req.user);
+  users.push(req.user._id);
   try {
     const groupchat = await chatModel.create({
-      chatName: req.body.chatName,
+      chatName: req.body.name,
       isGroupChat: true,
       users: users,
       groupAdmin: req.user,
     });
     if (!groupchat) throw new Error("Something went wrong");
 
-    const fullGroupChat = await groupchat
+    const fullGroupChat = await chatModel
       .findOne({ _id: groupchat._id })
       .popuate("users", "-password")
       .popuate("groupAdmin", "-password");
@@ -110,12 +198,21 @@ const createGroupChat = async (req, res) => {
     res.status(200).json({ groupchat: fullGroupChat });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({
+      success: false,
+      status: true,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Something went wrong try again !",
+      },
+    });
   }
 };
 // rename a chat
 const renameGroup = async (req, res) => {
   const { chatId, chatName } = req.body;
+  console.log("req came to", req.body);
+
   if (!chatName)
     return res.status(400).json({
       success: false,
@@ -188,13 +285,11 @@ const addUserToGroup = async (req, res) => {
     return res.status(200).json(groupChat);
   } catch (err) {
     console.log(err, "add user group");
-    return res
-      .staus(200)
-      .json({
-        success: false,
-        status: "Failed",
-        error: "Something went wrong try again !",
-      });
+    return res.staus(200).json({
+      success: false,
+      status: "Failed",
+      error: "Something went wrong try again !",
+    });
   }
 };
 

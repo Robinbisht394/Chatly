@@ -132,6 +132,8 @@ const login = async (req, res) => {
 
 //  /user?search
 const getAllUsers = async (req, res) => {
+  console.log("req", req.query);
+
   const keyword = req.query.search
     ? {
         $or: [
@@ -140,9 +142,10 @@ const getAllUsers = async (req, res) => {
         ],
       }
     : {};
-  console.log("Search", keyword);
 
   const user = await UserModel.find(keyword);
+  console.log(user);
+
   res.status(200).json({
     success: true,
     status: "success",

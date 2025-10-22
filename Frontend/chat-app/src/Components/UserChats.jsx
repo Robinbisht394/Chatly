@@ -7,7 +7,10 @@ import {
   useToast,
   Stack,
   useDisclosure,
+  Flex,
+  Avatar,
 } from "@chakra-ui/react";
+import axios from "axios";
 import { chatState } from "../context/chatProvider";
 import SkeletonLoading from "./SkeletonLoading";
 import { sender } from "../config/appLogic";
@@ -17,100 +20,113 @@ const UserChats = () => {
   const {
     user,
     selectedChat,
-    setSeletedchat,
+    setSelectedchat,
     chatStateList,
     setChatStateList,
-  } = chatState;
+  } = chatState();
   const groupModalDisclosure = useDisclosure();
   const toast = useToast();
+  console.log(selectedChat);
+
+  // fetch all chats for logged-in user part of
   const fetchUserChats = async () => {
     try {
       const config = {
         headers: {
-          authorisation: `bearer ${user.token}`,
+          authorization: `bearer ${user.token}`,
         },
       };
 
-      const { data } = axios.get("http://localhost:4000/api/chats", config);
-      setChatStateList(data);
+      const response = await axios.get(
+        "http://localhost:4000/api/v1/chat",
+        config
+      );
+
+      setChatStateList(response?.data?.chats);
     } catch (err) {
+      console.error(err);
+
       toast({
         title: "something went occured",
-        description: "failed to load chats",
+        description: "failed to load chats try again !",
         status: "error",
         duration: 3000,
       });
     }
   };
   useEffect(() => {
-    setLoggedUser(JSON.parse(localStorage.getItem("user")));
-    fetchUserChats();
-  }, []);
+    setLoggedUser(JSON.parse(localStorage.getItem("chatlyUser")));
+    if (user != undefined) {
+      fetchUserChats();
+    }
+  }, [user]);
   return (
-    <>
-      <Box
-        display={{ base: !selectedChat ? "flex" : "none", md: "flex" }}
-        border={"2px solid white"}
-        justifyContent={"space-between"}
-        padding={"4px"}
-        width={"35vw"}
-        height={"85vh"}
-        bg={"beige"}
-        borderRadius={"5px"}
+    <Box display="flex" flexDirection="column" p={4} h="100%">
+      {/* header for MyChats + group Chat create */}
+      <Flex
+        justifyContent="space-between"
+        alignItems="center"
+        pb={3}
+        mb={3}
+        borderBottom="1px solid #2f3b42"
       >
-        <Box
-          display={"flex"}
-          padding={"2px"}
-          width={"100%"}
-          justifyContent={"space-between"}
-          alignItems={"center"}
-        >
-          <Heading fontSize={"20px"}>My Chats</Heading>
+        <Heading fontSize="xl">My Chats</Heading>
 
-          <Button
-            bg={"grey.400"}
-            color={"white"}
-            padding={"2px"}
-            textAlign={"center"}
-            onClick={groupModalDisclosure.onOpen}
-          >
-            group Chat +
-          </Button>
-          <GroupModal groupModalDisclosure={groupModalDisclosure} />
-        </Box>
-        {/* user chats */}
-        <Box
-          display={"flex"}
-          justifyContent={"space-between"}
-          alignItems={"center"}
-          flexDirection={"column"}
+        <Button
+          bg="#00a884"
+          color="white"
+          size="sm"
+          _hover={{ bg: "#029e78" }}
+          onClick={groupModalDisclosure.onOpen}
         >
-          {chats ? (
-            <Stack overflowY={"scroll"}>
-              {chatStateList.map((chat) => {
-                return (
-                  <Box
-                    onClick={setSeletedchat(chat)}
-                    cursor={"pointer"}
-                    bg={selectedChat == chat ? "green" : ""}
-                    color={selectedChat == chat ? "white" : "black"}
-                    key={chat._id}
-                  >
-                    <Text>
-                      {!chat.isgroupChat
-                        ? sender(loggedUser, chat.users)
-                        : chat.chatName}
-                    </Text>
-                  </Box>
-                );
-              })}
-            </Stack>
-          ) : (
-            <SkeletonLoading />
-          )}
-        </Box>
+          New Group +
+        </Button>
+        <GroupModal groupModalDisclosure={groupModalDisclosure} />
+      </Flex>
+
+      <Box flex="1" overflowY="scroll" className="no-scrollbar" p={3}>
+        {" "}
+        {chatStateList && user ? (
+          <Stack spacing={2}>
+            {chatStateList.map((chat) => {
+              return (
+                <Box
+                  onClick={() => setSelectedchat(chat)}
+                  cursor="pointer"
+                  borderRadius="lg"
+                  px={3}
+                  py={2}
+                  bg={selectedChat === chat ? "#005c4b" : "transparent"}
+                  _hover={{ bg: selectedChat === chat ? "#005c4b" : "#2a3942" }}
+                  key={chat._id}
+                  display={"flex"}
+                  justifyContent={"start"}
+                  alignItems={"center"}
+                  gap={4}
+                >
+                  <Avatar
+                    size="sm"
+                    name={
+                      chat.isGroupChat
+                        ? chat.chatName
+                        : sender(loggedUser, chat.users)
+                    }
+                    src={user?.pic || ""}
+                  />
+                  <Text fontWeight="medium" color="white">
+                    {!chat.isGroupChat
+                      ? sender(loggedUser, chat.users)
+                      : chat.chatName}
+                  </Text>
+                </Box>
+              );
+            })}
+          </Stack>
+        ) : (
+          <SkeletonLoading />
+        )}
       </Box>
-    </>
+    </Box>
   );
 };
 

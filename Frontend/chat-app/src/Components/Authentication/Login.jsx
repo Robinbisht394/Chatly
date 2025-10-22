@@ -34,7 +34,6 @@ const Login = () => {
       "http://localhost:4000/api/v1/user/login",
       formData
     );
-    console.log({ response: data, error: error });
 
     if (error?.data?.code === "USER_NOT_FOUND") {
       console.log(error.response);
@@ -59,7 +58,7 @@ const Login = () => {
       });
       setError(null);
     } else if (data) {
-      console.log(data);
+      console.log(response);
 
       localStorage.setItem("chatlyUser", JSON.stringify(data.user));
       toast({

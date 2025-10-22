@@ -5,6 +5,6 @@ const { authMiddleware } = require("../MiddleWare/authMiddleware");
 
 router.route("/signup").post(signup); // signup or register
 router.route("/login").post(login); // login
-router.route("/search").get(authMiddleware, getAllUsers);
+router.route("/search").get(getAllUsers);
 
 module.exports = router;

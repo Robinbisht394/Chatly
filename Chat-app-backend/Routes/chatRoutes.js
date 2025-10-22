@@ -12,9 +12,9 @@ const {
 
 router.route("/").post(authMiddleware, accessChat);
 router.route("/").get(authMiddleware, fetchAllchats);
-router.route("/groupchat").post(createGroupChat);
-router.route("/renamegroupchat").put(renameGroup);
-router.route("/dropuser").put(dropUserFromGroup);
-router.route("/adduser").put(addUserToGroup);
+router.route("/groupchat").post(authMiddleware, createGroupChat);
+router.route("/renamegroupchat").put(authMiddleware, renameGroup);
+router.route("/dropuser").put(authMiddleware, dropUserFromGroup);
+router.route("/adduser").put(authMiddleware, addUserToGroup);
 
 module.exports = router;
