@@ -25,14 +25,12 @@ app.use("/api/v1/message", messageRoutes);
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
-    origin: "http://localhost:5173",
+    // origin: "http://localhost:5173",
   },
 });
 
 // establish a connection
 io.on("connection", (socket) => {
-  console.log("connected to socket.io");
-
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
@@ -47,8 +45,8 @@ io.on("connection", (socket) => {
     let chat = newMessage.chat;
     if (!chat.users) return;
     chat.users.forEach((user) => {
-      if (user._id == newMessage.sender._id) return;
-      socket.in(user._id).emit("message recieved", newMessage);
+      if (user == newMessage.sender._id) return;
+      socket.in(user).emit("message received", newMessage);
     });
   });
 

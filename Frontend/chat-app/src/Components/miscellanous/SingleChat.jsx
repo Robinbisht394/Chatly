@@ -35,14 +35,12 @@ const SingleChat = () => {
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
-
+  const [istyping, setIsTyping] = useState(false);
   // Responsive arrow button visibility
   const arrowDisplay = useBreakpointValue({ base: "block", md: "none" });
 
   // ✅ Send message handler
   const sendMessage = async (e) => {
-    console.log("message sent");
-
     if (e.key === "Enter" && newMessage.trim()) {
       if (!user || !user.token) {
         toast({ title: "Authentication Error", status: "error" });
@@ -67,12 +65,13 @@ const SingleChat = () => {
           },
           config
         );
-        console.log(response);
 
         // Emit message to socket
-        // socket.emit("new message", data);
-        // setMessages((prev) => [...prev, data]);
+        socket.emit("new message", response.data.chatMessage);
+        setMessages((prev) => [...prev, response.data.chatMessage]);
       } catch (err) {
+        console.log(err);
+
         setNewMessage(newMessage); // Restore message if send failed
         toast({
           title: "Error sending message",
@@ -105,9 +104,6 @@ const SingleChat = () => {
           `${endpoint}/api/v1/message/${selectedChat._id}`,
           config
         );
-        console.log("fetch messages");
-
-        console.log(response);
 
         setMessages(response.data.message);
         setLoading(false);
@@ -133,7 +129,9 @@ const SingleChat = () => {
   useEffect(() => {
     socket = io(endpoint);
     socket.emit("setup", user);
-    socket.on("connect", () => setSocketConnected(true));
+    socket.on("connected", () => setSocketConnected(true));
+
+    socket.emit("join chat", selectedChat._id);
 
     socket.on("message received", (newMessageReceived) => {
       if (
@@ -153,12 +151,24 @@ const SingleChat = () => {
     return () => {
       socket.disconnect();
     };
-  }, [user, notification, setNotification]); // Added 'user' to ensure setup runs when user is ready
+  }, [user, notification, setNotification, setMessages]);
 
   // ✅ Typing handler (remains the same)
   const typingIndicator = (e) => {
     setNewMessage(e.target.value);
+    socket.emit("typing", selectedChat._id);
+    setIsTyping(true);
+    if (newMessage == e.target.value) {
+      socket.emit("stop typing", selectedChat._id);
+    }
   };
+  useEffect(() => {
+    socket.on("typing");
+    console.log("user is typing");
+    if (socket.on("stop typing")) {
+      setIsTyping(false);
+    }
+  }, [newMessage, setNewMessage, typingIndicator]);
 
   // Empty state rendering
   if (!selectedChat)
@@ -260,6 +270,7 @@ const SingleChat = () => {
 
       {/* Input */}
       <FormControl onKeyDown={sendMessage}>
+        <span>{istyping && "Typing"}</span>
         <Input
           value={newMessage}
           onChange={typingIndicator}

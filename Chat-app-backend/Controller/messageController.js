@@ -2,9 +2,6 @@ const chatModel = require("../Model/chatModel");
 const messageModel = require("../Model/messageModel");
 
 const sendMessage = async (req, res) => {
-  console.log("req came for message");
-  console.log(req.body, req.user);
-
   const { content, chatId } = req.body;
 
   if (!content || !chatId) {
@@ -54,10 +51,7 @@ const sendMessage = async (req, res) => {
 };
 
 const getAllMessage = async (req, res) => {
-  console.log("get messages");
-
   const { chatId } = req.params;
-  console.log(chatId, typeof chatId);
 
   try {
     const message = await messageModel
@@ -65,7 +59,6 @@ const getAllMessage = async (req, res) => {
       .populate("sender", "name email pic")
       .populate("chat")
       .sort({ createdAt: 1 });
-    console.log(message);
 
     res.status(200).json({ success: true, status: "success", message });
   } catch (err) {
