@@ -12,7 +12,7 @@ import {
   Input,
   FormControl,
   Flex,
-  useBreakpointValue, // For responsive design
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import { FaArrowLeft } from "react-icons/fa";
 import UpdateGroupModal from "./UpdateGroupModal";
@@ -20,7 +20,6 @@ import ScrollabelFeed from "./ScrollabelFeed";
 import io from "socket.io-client";
 import axios from "axios";
 
-// NOTE: It's cleaner to use environment variables for the endpoint
 const endpoint = "http://localhost:4000";
 let socket, selectedChatCompare;
 
@@ -36,10 +35,11 @@ const SingleChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
   const [istyping, setIsTyping] = useState(false);
-  // Responsive arrow button visibility
+
+  // Responsive arrow button
   const arrowDisplay = useBreakpointValue({ base: "block", md: "none" });
 
-  // ✅ Send message handler
+  // Send message handler
   const sendMessage = async (e) => {
     if (e.key === "Enter" && newMessage.trim()) {
       if (!user || !user.token) {
@@ -84,12 +84,28 @@ const SingleChat = () => {
     }
   };
 
-  // ✅ Fetch chat messages
+  const sendNotification = async (chat, content) => {
+    console.log("notification sent");
+
+    try {
+      const response = await axios.post(
+        "http://localhost:4000/api/v1/notification/",
+        {
+          chat,
+          content,
+        }
+      );
+      console.log(response);
+    } catch (err) {
+      console.err(err);
+    }
+  };
+
+  // Fetch chat messages
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
 
-      // 💡 Bug Fix: Check for token before fetching
       if (!user || !user.token) return;
 
       try {
@@ -123,52 +139,91 @@ const SingleChat = () => {
     };
 
     fetchMessages();
-  }, [selectedChat, user, toast]); // Dependency array simplified
+  }, [selectedChat]); // Dependency array simplified
 
-  // ✅ Socket setup
+  //  Socket setup
   useEffect(() => {
+    // Initialize socket and setup
+
     socket = io(endpoint);
     socket.emit("setup", user);
     socket.on("connected", () => setSocketConnected(true));
 
-    socket.emit("join chat", selectedChat._id);
+    // Cleanup function for socket disconnection
+    return () => {
+      socket.off("message received");
+      socket.off("typing");
+      socket.off("stop typing");
+      socket.disconnect();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!socket) return;
+    console.log("message useEffect");
 
     socket.on("message received", (newMessageReceived) => {
       if (
         !selectedChatCompare ||
-        selectedChatCompare._id !== newMessageReceived.chat._id
+        selectedChatCompare._id != newMessageReceived.chat._id
       ) {
-        // Notification logic remains correct
-        if (!notification.find((n) => n._id === newMessageReceived._id)) {
-          setNotification([newMessageReceived, ...notification]);
-        }
+        // --- Notification Handling ---
+
+        console.log("notify set");
+        setNotification((prevNotifications) => {
+          // Check if the message is already in the notification list
+          const exist = prevNotifications.some(
+            (n) => n._id === newMessageReceived._id
+          );
+          if (!exist) {
+            return [newMessageReceived, ...prevNotifications];
+          }
+
+          return prevNotifications;
+        });
+        sendNotification(newMessageReceived.chat, newMessageReceived.content);
       } else {
         setMessages((prev) => [...prev, newMessageReceived]);
       }
     });
 
-    // Cleanup function for socket disconnection
     return () => {
-      socket.disconnect();
+      socket.off("message received");
+      console.log("messag off");
     };
-  }, [user, notification, setNotification, setMessages]);
+  }, [setMessages, setNotification]);
 
-  // ✅ Typing handler (remains the same)
   const typingIndicator = (e) => {
     setNewMessage(e.target.value);
+    if (!socket) return;
     socket.emit("typing", selectedChat._id);
     setIsTyping(true);
-    if (newMessage == e.target.value) {
+    let timeout;
+    if (timeout) {
+      clearInterval(timeout);
+    }
+
+    timeout = setTimeout(() => {
       socket.emit("stop typing", selectedChat._id);
-    }
+    }, 3000);
   };
+  // typing socket
   useEffect(() => {
-    socket.on("typing");
-    console.log("user is typing");
-    if (socket.on("stop typing")) {
+    if (!socket) return;
+
+    socket.on("typing", () => {
+      setIsTyping(true);
+    });
+
+    socket.on("stop typing", () => {
       setIsTyping(false);
-    }
-  }, [newMessage, setNewMessage, typingIndicator]);
+    });
+
+    return () => {
+      socket.off("typing");
+      socket.off("stop typing");
+    };
+  }, [setNewMessage]);
 
   // Empty state rendering
   if (!selectedChat)
@@ -179,9 +234,9 @@ const SingleChat = () => {
         color="gray.400"
         justify="center"
         align="center"
-        fontSize="xl" // Increased font size
+        fontSize="xl"
         borderRadius="md"
-        h="100%" // Take full height of parent container
+        h="100%"
       >
         Select a chat to start messaging 💬
       </Flex>
@@ -190,10 +245,10 @@ const SingleChat = () => {
   return (
     <Flex
       flexDir="column"
-      bg="#202c33" // 🎨 THEME: Used a dark color for the chat box container
+      bg="#202c33"
       color="#e9edef"
       w="100%"
-      h="100%" // Use 100% to fill the parent box height
+      h="100%"
       borderRadius="md"
       p="4"
     >
@@ -270,7 +325,9 @@ const SingleChat = () => {
 
       {/* Input */}
       <FormControl onKeyDown={sendMessage}>
-        <span>{istyping && "Typing"}</span>
+        <span>
+          {istyping && <p className="pl-5 text-green-500">typing...</p>}
+        </span>
         <Input
           value={newMessage}
           onChange={typingIndicator}

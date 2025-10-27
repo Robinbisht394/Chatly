@@ -1,13 +1,35 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Flex } from "@chakra-ui/react";
 import SideBar from "../Components/miscellanous/SideBar";
 import UserChats from "../Components/UserChats";
 import ChatBox from "../Components/ChatBox";
 import { chatState } from "../context/chatProvider";
-
+import axios from "axios";
 const ChatPage = () => {
-  const { user, selectedChat } = chatState();
+  const { user, selectedChat, notification, setUser } = chatState();
 
+  const fetchNotifications = async () => {
+    const config = {
+      headers: {
+        authorization: `Bearer ${user.token}`,
+      },
+    };
+    try {
+      const response = await axios.get(
+        "http://localhost:4000/api/v1/notification",
+        config
+      );
+      console.log(response);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, notification, setUser]);
   return (
     <Flex
       w="100%"

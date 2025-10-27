@@ -10,6 +10,7 @@ const app = express();
 const userRoutes = require("./Routes/UserRoutes");
 const chatRoutes = require("./Routes/chatRoutes");
 const messageRoutes = require("./Routes/messageRoutes");
+const notificationRoutes = require("./Routes/notificationRoutes");
 const { dbConnection } = require("./Config/dbConnection");
 
 // middleware
@@ -21,6 +22,7 @@ const server = http.createServer(app);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1/message", messageRoutes);
+app.use("/api/v1/notification", notificationRoutes);
 
 const io = new Server(server, {
   pingTimeout: 60000,

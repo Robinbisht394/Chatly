@@ -20,7 +20,7 @@ const UserChats = () => {
   const {
     user,
     selectedChat,
-    setSelectedchat,
+    setSelectedChat,
     chatStateList,
     setChatStateList,
   } = chatState();
@@ -91,7 +91,7 @@ const UserChats = () => {
             {chatStateList.map((chat) => {
               return (
                 <Box
-                  onClick={() => setSelectedchat(chat)}
+                  onClick={() => setSelectedChat(chat)}
                   cursor="pointer"
                   borderRadius="lg"
                   px={3}

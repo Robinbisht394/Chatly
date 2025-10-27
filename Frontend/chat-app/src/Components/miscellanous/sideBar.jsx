@@ -76,6 +76,22 @@ const SideBar = () => {
     navigate("/"); //navigate to login page
   };
 
+  // hnadle notification
+  const handleNotification = async (notif) => {
+    setSelectedChat(notif.chat);
+    setNotification(notification.filter((n) => n !== notif));
+
+    try {
+      const response = await axios.put(
+        "http://localhost:4000/api/v1/notification",
+        notif.chat._id
+      );
+      console.log(err);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <Flex
       bg="#202c33"
@@ -118,7 +134,7 @@ const SideBar = () => {
           <MenuButton as={Button} bg="transparent" _hover={{ bg: "none" }}>
             <Box position="relative">
               <FaBell size={18} color="white" />
-              {notification?.length > 0 && (
+              {notification?.length >= 0 && (
                 <Box
                   as="span"
                   position="absolute"
@@ -145,10 +161,7 @@ const SideBar = () => {
                 key={notif._id}
                 bg="transparent"
                 _hover={{ bg: "#3a4b52" }}
-                onClick={() => {
-                  setSelectedChat(notif.chat);
-                  setNotification(notification.filter((n) => n !== notif));
-                }}
+                onClick={() => handleNotification(notif)}
               >
                 {notif.chat.isGroupChat
                   ? `New message in ${notif.chat.chatName}`
