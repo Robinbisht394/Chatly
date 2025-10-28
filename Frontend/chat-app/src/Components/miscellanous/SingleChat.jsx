@@ -13,6 +13,7 @@ import {
   FormControl,
   Flex,
   useBreakpointValue,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import { FaArrowLeft } from "react-icons/fa";
 import UpdateGroupModal from "./UpdateGroupModal";
@@ -40,6 +41,7 @@ const SingleChat = () => {
   const arrowDisplay = useBreakpointValue({ base: "block", md: "none" });
 
   // Send message handler
+
   const sendMessage = async (e) => {
     if (e.key === "Enter" && newMessage.trim()) {
       if (!user || !user.token) {
@@ -139,7 +141,7 @@ const SingleChat = () => {
     };
 
     fetchMessages();
-  }, [selectedChat]); // Dependency array simplified
+  }, [selectedChat]);
 
   //  Socket setup
   useEffect(() => {
@@ -151,9 +153,6 @@ const SingleChat = () => {
 
     // Cleanup function for socket disconnection
     return () => {
-      socket.off("message received");
-      socket.off("typing");
-      socket.off("stop typing");
       socket.disconnect();
     };
   }, [user]);
@@ -183,6 +182,8 @@ const SingleChat = () => {
         });
         sendNotification(newMessageReceived.chat, newMessageReceived.content);
       } else {
+        console.log(selectedChatCompare);
+
         setMessages((prev) => [...prev, newMessageReceived]);
       }
     });
@@ -206,6 +207,7 @@ const SingleChat = () => {
     timeout = setTimeout(() => {
       socket.emit("stop typing", selectedChat._id);
     }, 3000);
+
   };
   // typing socket
   useEffect(() => {
