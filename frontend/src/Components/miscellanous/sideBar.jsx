@@ -16,7 +16,7 @@ import {
 import { FaSearch, FaBell } from "react-icons/fa";
 import axios from "axios";
 import Sidedrawer from "./SideDrawer";
-import UserProfileModal from "../miscellanous/UserProfileModal";
+import UserProfileModal from "./UserProfileModal";
 import { chatState } from "../../context/chatProvider";
 import { sender } from "../../services/appLogic";
 import { useNavigate } from "react-router-dom";

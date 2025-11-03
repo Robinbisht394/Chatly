@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { Box, Flex } from "@chakra-ui/react";
-import SideBar from "../Components/miscellanous/SideBar";
-import UserChats from "../Components/UserChats";
-import ChatBox from "../Components/ChatBox";
+import SideBar from "../Components/miscellanous/SideBar.jsx";
+import UserChats from "../Components/UserChats.jsx";
+import ChatBox from "../Components/ChatBox.jsx";
 import { chatState } from "../context/chatProvider";
 import axios from "axios";
 const ChatPage = () => {
