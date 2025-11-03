@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Box, Flex } from "@chakra-ui/react";
-import SideBar from "../Components/miscellanous/SideBar.jsx";
+import SideBar from "../Components/miscellanous/sideBar.jsx";
 import UserChats from "../Components/UserChats.jsx";
 import ChatBox from "../Components/ChatBox.jsx";
 import { chatState } from "../context/chatProvider";
